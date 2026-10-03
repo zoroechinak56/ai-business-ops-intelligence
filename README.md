@@ -96,6 +96,19 @@ analysis and elapsed ticket-resolution time are unavailable in the current
 source schema; the supplier grouping and NULL resolution-time output are
 documented in the KPI dictionary.
 
+## Run Python analytics
+
+After loading the database and creating the SQL reporting views, run:
+
+```powershell
+python -m src.analytics.run_analytics
+```
+
+This replaces the `order_features`, `anomalies`, `customer_segments`, and
+`stat_tests` tables in the configured database. Method definitions and feature
+semantics are documented in `docs/python_analytics.md`. This step does not
+implement root-cause analysis.
+
 ## Roadmap
 
 - [x] Step 1a: Create the workspace and repository structure.
@@ -105,7 +118,7 @@ documented in the KPI dictionary.
 - [x] Step 4: Build source-data cleaning and rejected-row quarantine outputs.
 - [x] Step 5: Create the SQL schema and deterministic database rebuild command.
 - [x] Step 6: Add SQL views and KPI, cohort, ranking, and time-based queries.
-- [ ] Step 7: Build Python feature engineering, segmentation, and anomaly analysis.
+- [x] Step 7: Build Python feature engineering, segmentation, and anomaly analysis.
 - [ ] Step 8: Add statistical/root-cause analysis and tests for validation and KPI logic.
 - [ ] Step 9: Define KPI formulas, grains, and owners; build CEO Overview, Operations, Inventory, Customer, SLA & Delivery, and Root Cause Power BI dashboards.
 - [ ] Step 10: Produce evidence-grounded AI findings, evidence, and recommendations.
