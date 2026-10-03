@@ -1,168 +1,257 @@
 # AI-Powered Business Operations Intelligence & Automation Platform
 
-## Business Problem
+An end-to-end portfolio case study for a mid-size e-commerce and distribution
+business. The project turns synthetic but operationally realistic source data
+into validated analytics, explainable business findings, and an auditable
+automation workflow.
 
-A mid-size e-commerce and distribution company stores orders, customers, inventory, suppliers, employees, deliveries, and support tickets in fragmented spreadsheets. Management needs a reliable way to identify delay drivers, customer risk, warehouse inefficiency, SLA breaches, and inventory problems, then turn evidence into auditable action.
+## Case study: from fragmented operations data to actionable signals
 
-## Architecture
+### Problem
+
+Operations teams need to explain fulfilment changes and identify which
+warehouse, supplier, inventory group, or customer signals deserve attention.
+Spreadsheet-level reporting does not provide a repeatable way to validate
+incoming data, trace KPI movement to underlying segments, or record the
+resulting actions.
+
+### Business questions
+
+- Is fulfilment falling, and when did the change occur?
+- Which warehouse segment contributes most to a decline?
+- Which suppliers have the highest late-delivery rate relative to the
+  supplier average?
+- Which SKU groups have the most inventory stock-outs?
+- Are warehouse processing, delivery performance, customer risk, and support
+  signals changing together?
+- Can a recommendation be generated using only measured evidence and retained
+  with an audit trail?
+
+### Architecture
 
 ```text
-Raw data
-   -> Validation
-   -> SQL database
-   -> Python analytics
-   -> KPI / statistical layer
-   -> Power BI
-   -> AI reasoning layer
-   -> Business recommendation
-   -> n8n automation
-   -> Action + audit log
+Immutable synthetic CSVs
+        |
+        v
+Validation -> Cleaning / rejected-row quarantine
+        |
+        v
+PostgreSQL (DATABASE_URL) / SQLite fallback
+        |
+        +--> SQL views and KPI queries
+        |
+        v
+Python features, anomalies, segmentation, statistics
+        |
+        v
+Root-cause decomposition + statistical support
+        |
+        +--> Power BI-ready CSV exports
+        |
+        v
+Evidence-constrained AI finding and recommendation
+        |
+        v
+n8n pipeline trigger -> threshold alerts -> audit log
+        |
+        v
+Markdown run report
 ```
 
-## Repository Structure
+The AI layer consumes computed KPI and root-cause evidence. It validates
+generated numeric claims against those facts; without an API key, it uses a
+deterministic template. The root-cause statistical tests support comparisons
+but do not establish causality.
+
+### Measured results
+
+The saved pipeline run compares May and June 2025:
+
+- Fulfilment moved from **93.99%** to **88.06%**, a decline of **5.93
+  percentage points**.
+- Warehouse A (WH-A) fulfilment moved from **89.50%** to **55.56%**. Its
+  volume-weighted contribution was **-9.57 percentage points**, while it
+  accounted for **88.8%** of June unfulfilled orders. The contribution is
+  larger than the overall decline because other warehouse segments offset
+  part of it.
+- Supplier X (SUP-001) had a **34.5%** late-delivery rate versus a **20.0%**
+  all-supplier average, a **14.46 percentage-point** gap.
+- SKU group Y had a **32.6%** stock-out rate (**298** of **915** snapshots),
+  representing **46.9%** of the **635** stock-out snapshots in the period.
+- The run completed all **8** pipeline steps and emitted **3** threshold
+  alerts: low fulfilment, above-average supplier lateness, and high SKU-group
+  stock-outs.
+
+These are results from the project’s deterministic synthetic dataset and
+saved pipeline output, not claims about a live business. The decomposition is
+descriptive: supplier-delay and stock-out evidence are separate operational
+signals, not proof of causal impact on fulfilment.
+
+### Sample AI output
 
 ```text
-data/raw/                 Immutable source files
-data/processed/           Validated and transformed artifacts
-sql/schema/               Database schema
-sql/views/                Reusable analytical views
-sql/kpi_queries/          KPI, cohort, ranking, and time-based queries
-src/ingestion/            Source loading
-src/validation/           Input validation
-src/cleaning/             Standardization and cleaning
-src/analytics/            Features, statistics, and root-cause analysis
-src/ai_layer/             Evidence-grounded findings and recommendations
-tests/                    Automated tests
-notebooks/                Exploratory analysis and demonstrations
-n8n/                      Workflow exports
-powerbi/                  Power BI project artifacts
-docs/                     Architecture and KPI definitions
+Finding: Fulfilment fell from 93.99% in 2025-05 to 88.06% in 2025-06, a change of -5.93 percentage points.
+Evidence:
+- Warehouse WH-A fulfilment changed from 89.50% to 55.56%; contribution -9.57 pp; 88.8% of unfulfilled orders.
+- Supplier SUP-001 had a late rate of 34.5% versus the all-supplier average of 20.0%, a gap of +14.46 percentage points.
+- SKU group Y had a stock-out rate of 32.6% (298 of 915 snapshots), representing 46.9% of all 635 stock-out snapshots in the period.
+Recommendation:
+- Review warehouse WH-A's fulfilment process and investigate late deliveries from supplier SUP-001.
+- Review replenishment and inventory controls for SKU group Y.
 ```
 
-## Setup
+This example is copied from the saved pipeline report. Recommendations are
+investigation priorities based on the evidence, not measured business savings.
 
-Use Python 3.11 and PowerShell from the project root:
+## Technology
+
+- **Python 3.11** for ingestion, validation, cleaning, analytics, orchestration,
+  and tests.
+- **Faker, NumPy, and pandas** for deterministic synthetic operational data
+  generation and tabular processing.
+- **Pandera, SQLAlchemy, PostgreSQL, and SQLite** for data-quality rules,
+  database access, and portable local execution.
+- **SQLite-compatible SQL** for KPI queries, analytical views, CTEs, and
+  window functions.
+- **SciPy and scikit-learn** for statistical tests, anomaly detection, feature
+  analysis, and customer segmentation.
+- **Anthropic SDK** for optional evidence-constrained AI reasoning, with a
+  deterministic no-key fallback.
+- **Power BI CSV exports** and an importable **n8n** workflow for reporting
+  integration and run automation.
+- **pytest and Ruff** for automated tests and linting.
+
+## Run the project
+
+Use PowerShell from the repository root. The individual commands below run
+one stage at a time in dependency order. Configure `.env` from `.env.example`
+for optional credentials and `DATABASE_URL`; SQLite is used when the database
+URL is not set.
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
+```
+
+### One command per stage
+
+```powershell
+# Generate the deterministic source CSVs
+python -m src.generate_data
+
+# Validate raw CSVs and write the validation report
+python -m src.validation.validator
+
+# Clean and quarantine rejected rows
+python -m src.cleaning.cleaner
+
+# Rebuild the SQL database from clean tables
+python -m src.ingestion.load_db
+
+# Execute KPI queries and create reporting views
+python -m src.analytics.run_sql
+
+# Run feature, anomaly, customer-segmentation, and statistics analytics
+python -m src.analytics.run_analytics
+
+# Decompose the May-to-June fulfilment change
+python -m src.analytics.root_cause --kpi fulfilment --from 2025-05 --to 2025-06
+
+# Generate Finding / Evidence / Recommendation output
+python -m src.ai_layer.reasoner --question "Why did fulfilment fall this month?"
+
+# Export Power BI-ready CSVs
+python -m src.analytics.export_powerbi
+
+# Run the complete validation-to-report automation from a source bundle
+python -m src.automation.run_pipeline --file data/raw
+
+# Run automated checks
 python -m pytest
 ```
 
-Set local credentials and connection details in `.env`. Never commit `.env`; use `.env.example` as the placeholder template.
+The end-to-end pipeline command performs validation, cleaning, database
+reload, Python analytics, root-cause analysis, AI reasoning, alert evaluation,
+and report writing. It writes run-level records to `audit_log`, AI request
+records to `ai_audit_log`, a Markdown report to
+`data/processed/reports/`, and prints JSON status. It rebuilds operational
+tables; use an isolated database for demonstrations.
 
-Common tasks:
+For n8n setup, execution requirements, alert thresholds, and credentials, see
+[docs/automation.md](docs/automation.md). For database configuration, see
+[docs/database.md](docs/database.md).
 
-```powershell
-python tasks.py setup
-python tasks.py test
-python tasks.py lint
-python tasks.py clean
+## Power BI dashboard concepts
+
+The project includes Power BI-ready CSV exports and a specification for six
+dashboard pages. The image references below are placeholders for screenshots
+to add when the reports have been assembled in Power BI Desktop.
+
+### CEO Overview
+
+![CEO Overview dashboard screenshot placeholder](docs/screenshots/powerbi-ceo-overview.png)
+
+### Operations
+
+![Operations dashboard screenshot placeholder](docs/screenshots/powerbi-operations.png)
+
+### Inventory
+
+![Inventory dashboard screenshot placeholder](docs/screenshots/powerbi-inventory.png)
+
+### Customer
+
+![Customer dashboard screenshot placeholder](docs/screenshots/powerbi-customer.png)
+
+### SLA & Delivery
+
+![SLA & Delivery dashboard screenshot placeholder](docs/screenshots/powerbi-sla-delivery.png)
+
+### Root Cause
+
+![Root Cause dashboard screenshot placeholder](docs/screenshots/powerbi-root-cause.png)
+
+### n8n workflow
+
+![n8n workflow screenshot placeholder](docs/screenshots/n8n-workflow.png)
+
+Dashboard model relationships, DAX measures, visual suggestions, slicers, and
+wireframes are in [docs/powerbi_spec.md](docs/powerbi_spec.md). The n8n
+workflow export is [n8n/workflow.json](n8n/workflow.json).
+
+## Repository structure
+
+```text
+data/
+  raw/                  Immutable synthetic CSV source data
+  processed/            Validation, clean/rejected data, DB, and run outputs
+docs/                   KPI, architecture, analytics, AI, BI, and operations docs
+n8n/                    Importable workflow export
+powerbi/                Power BI artifacts and generated CSV export location
+sql/
+  schema/               Operational schema and date dimension
+  views/                Reporting views
+  kpi_queries/          Numbered KPI and analytical SQL
+src/
+  analytics/            Features, statistics, root cause, and exports
+  ai_layer/             Evidence-grounded reasoning
+  automation/            Full run orchestration and audit logging
+  cleaning/              Standardization and rejected-row handling
+  ingestion/             Database rebuild
+  validation/            Source quality checks
+  generate_data.py       Reproducible synthetic data generator
+tests/                   Focused unit and integration checks
 ```
 
-## Rebuild the SQL database
+## Project materials
 
-After generating, validating, and cleaning the source data, rebuild the
-database with one command:
-
-```powershell
-python -m src.ingestion.load_db
-```
-
-Set `DATABASE_URL` in `.env` to use PostgreSQL, for example
-`postgresql+psycopg2://user:password@localhost:5432/business_ops`. If
-`DATABASE_URL` is unset, the loader uses SQLite at
-`data/processed/business_ops.sqlite`. Each run drops and recreates the tables,
-loads the ten clean CSVs in foreign-key dependency order, populates the
-January-June 2025 date dimension, and verifies loaded counts against
-`cleaning_summary.json`. The schema and calendar definitions are in
-`sql/schema/`.
-
-## Run SQL analytics
-
-After rebuilding the database, execute every numbered KPI query and recreate
-the Power BI reporting views with:
-
-```powershell
-python -m src.analytics.run_sql
-```
-
-Queries are stored in `sql/kpi_queries/`, views in `sql/views/`, and metric
-formula/grain/owner definitions in `docs/kpi_dictionary.md`. Carrier-level SLA
-analysis and elapsed ticket-resolution time are unavailable in the current
-source schema; the supplier grouping and NULL resolution-time output are
-documented in the KPI dictionary.
-
-## Run Python analytics
-
-After loading the database and creating the SQL reporting views, run:
-
-```powershell
-python -m src.analytics.run_analytics
-```
-
-This replaces the `order_features`, `anomalies`, `customer_segments`, and
-`stat_tests` tables in the configured database. Method definitions and feature
-semantics are documented in `docs/python_analytics.md`. This step does not
-implement root-cause analysis.
-
-## Explain KPI changes
-
-Run the fulfilment decomposition for two months with:
-
-```powershell
-python -m src.analytics.root_cause --kpi fulfilment --from 2025-05 --to 2025-06
-```
-
-The command prints ranked warehouse, supplier, SKU-group, and (when distinct
-from warehouse) region contributions, then writes
-`data/processed/root_cause_latest.json`. Formulas,
-ranking rules, and dimension assignment assumptions are in
-`docs/root_cause.md`. Only fulfilment is supported at this step; this is not
-the AI recommendation layer.
-
-## Generate an AI explanation
-
-After generating the latest root-cause report, request an evidence-grounded
-explanation with:
-
-```powershell
-python -m src.ai_layer.reasoner --question "Why did fulfilment fall this month?"
-```
-
-Set `LLM_API_KEY` in `.env` to use Anthropic. Without a key, the command
-produces a deterministic response in the same format. `LLM_MODEL` optionally
-selects the model; its default is `claude-sonnet-5-5`. Each attempt and
-validation result is recorded in `ai_audit_log`. The reasoner rejects
-unsupported numbers and retries once. See [docs/ai_reasoner.md](docs/ai_reasoner.md)
-for the evidence and audit details.
-
-## Roadmap
-
-- [x] Step 1a: Create the workspace and repository structure.
-- [x] Step 1b: Add dependency, configuration, logging, task, test, and documentation foundations.
-- [x] Step 2: Generate reproducible synthetic source data with intentional operational issues.
-- [x] Step 3: Define and test source-data validation rules.
-- [x] Step 4: Build source-data cleaning and rejected-row quarantine outputs.
-- [x] Step 5: Create the SQL schema and deterministic database rebuild command.
-- [x] Step 6: Add SQL views and KPI, cohort, ranking, and time-based queries.
-- [x] Step 7: Build Python feature engineering, segmentation, and anomaly analysis.
-- [x] Step 8: Add statistical/root-cause analysis and tests for validation and KPI logic.
-- [x] Step 9: Produce evidence-grounded AI findings, evidence, and recommendations.
-- [ ] Step 10: Define KPI formulas, grains, and owners; build CEO Overview, Operations, Inventory, Customer, SLA & Delivery, and Root Cause Power BI dashboards.
-- [ ] Step 11: Build n8n validation, execution, alerting, reporting, and audit workflow.
-- [ ] Step 12: Document operations and support procedures.
-- [ ] Step 13: Verify the full reproducible end-to-end flow.
-
-## Initial Git Commit
-
-After reviewing the scaffold, initialize the repository and create the requested first commit:
-
-```powershell
-git init
-git add .
-git commit -m "chore: project scaffold"
-```
+- [Business-impact case study](docs/case_study.md)
+- [Resume and LinkedIn copy](docs/resume_bullets.md)
+- [KPI dictionary](docs/kpi_dictionary.md)
+- [Root-cause methodology](docs/root_cause.md)
+- [Python analytics notes](docs/python_analytics.md)
+- [Power BI specification](docs/powerbi_spec.md)
+- [Automation guide](docs/automation.md)
+- [MIT License](LICENSE)
