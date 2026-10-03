@@ -59,7 +59,7 @@ def _valid_answer() -> str:
         "representing 60.0% of all 5 stock-out snapshots in the period.\n"
         "Recommendation:\n"
         "- Review WH-A processing and backlog.\n"
-        "- Review supplier SUP-Z and replenish SKU group Z."
+        "- Review supplier SUP-Z and replenishment for SKU group Z."
     )
 
 
@@ -84,6 +84,7 @@ def test_deterministic_fallback_has_required_sections_and_is_audited() -> None:
         assert "Evidence:" in answer
         assert "Recommendation:" in answer
         assert "investigate late deliveries from supplier SUP-Z" in answer
+        assert "Review replenishment and inventory controls for SKU group Z" in answer
         with engine.connect() as connection:
             audit = connection.execute(
                 text(
@@ -320,3 +321,15 @@ def test_validation_rejects_missing_evidence_bullet_and_unsupported_number() -> 
 
     assert any("SKU-group evidence" in error for error in errors)
     assert any("numeric values" in error for error in errors)
+
+
+def test_validation_requires_selected_sku_group_in_recommendation() -> None:
+    """Recommendations cannot point to a different SKU group than the evidence."""
+    answer = _valid_answer().replace(
+        "replenishment for SKU group Z",
+        "replenishment for SKU group Y",
+    )
+
+    errors = validate_answer(answer, _facts())
+
+    assert any("Recommendation must use the SKU group" in error for error in errors)

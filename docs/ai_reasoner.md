@@ -18,7 +18,8 @@ If no supplier is above average, the reasoner says so and does not name one.
 The SKU group and recommendation are selected independently from the period-B
 results of SQL query 06: the group with the highest stock-out rate. Its bullet
 states the rate, stock-out snapshots and total snapshots for that group, and
-its share of all period-B stock-out snapshots.
+its share of all period-B stock-out snapshots. The recommendation is validated
+to reference that same selected group.
 
 The response contains one Finding, three ordered Evidence bullets, and one or
 two Recommendation bullets. Its only evidence is the computed root-cause

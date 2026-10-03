@@ -47,7 +47,8 @@ Evidence:
 - one supplier bullet stating the highest above-average supplier's late rate,
   all-supplier average, and gap in percentage points; if none is above average,
   explicitly say that no supplier is above average
-- one SKU-group bullet with numerical facts
+- one SKU-group bullet stating the highest-stock-out group's rate, snapshot
+  counts, and share of all stock-out snapshots in the period
 Recommendation:
 - one or two concise, actionable recommendations
 Do not add other sections or prose."""
@@ -168,10 +169,10 @@ def collect_evidence(report: dict[str, Any], engine: Engine) -> dict[str, Any]:
     stockout_totals = sum(
         int(row["stockout_snapshots"]) for row in stockout_rows
     )
-    stockout_row = max(
+    stockout_row = min(
         stockout_rows,
         key=lambda row: (
-            float(row["stockout_rate"]),
+            -float(row["stockout_rate"]),
             str(row["sku_group"]),
         ),
     )
@@ -395,6 +396,14 @@ def validate_answer(answer: str, facts: dict[str, Any]) -> list[str]:
             )
         if not 1 <= len(recommendation_bullets) <= 2:
             errors.append("Recommendation must contain one or two bullets.")
+        elif not any(
+            f"SKU group {sku_facts['segment']}" in bullet
+            for bullet in recommendation_bullets
+        ):
+            errors.append(
+                "Recommendation must use the SKU group selected by the "
+                "period stock-out query."
+            )
 
     fact_numbers = _numeric_values(json.dumps(facts, ensure_ascii=True))
     unsupported = _numeric_values(answer) - fact_numbers

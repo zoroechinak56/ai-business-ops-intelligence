@@ -19,6 +19,9 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 
+# Power BI export files are reproducible from the database and reports
+/powerbi/data/*.csv
+
 # Notebook checkpoints
 .ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
