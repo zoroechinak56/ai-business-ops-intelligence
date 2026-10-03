@@ -67,7 +67,7 @@ python tasks.py clean
 
 - [x] Step 1a: Create the workspace and repository structure.
 - [x] Step 1b: Add dependency, configuration, logging, task, test, and documentation foundations.
-- [ ] Step 2: Generate reproducible synthetic source data with intentional operational issues.
+- [x] Step 2: Generate reproducible synthetic source data with intentional operational issues.
 - [ ] Step 3: Define and test source-data validation rules.
 - [ ] Step 4: Create the SQL database schema and deterministic database rebuild command.
 - [ ] Step 5: Implement ingestion, cleaning, and standardized database loading.
