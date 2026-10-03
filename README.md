@@ -109,6 +109,20 @@ This replaces the `order_features`, `anomalies`, `customer_segments`, and
 semantics are documented in `docs/python_analytics.md`. This step does not
 implement root-cause analysis.
 
+## Explain KPI changes
+
+Run the fulfilment decomposition for two months with:
+
+```powershell
+python -m src.analytics.root_cause --kpi fulfilment --from 2025-05 --to 2025-06
+```
+
+The command prints ranked warehouse, supplier, SKU-group, and region
+contributions, then writes `data/processed/root_cause_latest.json`. Formulas,
+ranking rules, and dimension assignment assumptions are in
+`docs/root_cause.md`. Only fulfilment is supported at this step; this is not
+the AI recommendation layer.
+
 ## Roadmap
 
 - [x] Step 1a: Create the workspace and repository structure.
@@ -119,7 +133,7 @@ implement root-cause analysis.
 - [x] Step 5: Create the SQL schema and deterministic database rebuild command.
 - [x] Step 6: Add SQL views and KPI, cohort, ranking, and time-based queries.
 - [x] Step 7: Build Python feature engineering, segmentation, and anomaly analysis.
-- [ ] Step 8: Add statistical/root-cause analysis and tests for validation and KPI logic.
+- [x] Step 8: Add statistical/root-cause analysis and tests for validation and KPI logic.
 - [ ] Step 9: Define KPI formulas, grains, and owners; build CEO Overview, Operations, Inventory, Customer, SLA & Delivery, and Root Cause Power BI dashboards.
 - [ ] Step 10: Produce evidence-grounded AI findings, evidence, and recommendations.
 - [ ] Step 11: Build n8n validation, execution, alerting, reporting, and audit workflow.
