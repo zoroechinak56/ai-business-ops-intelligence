@@ -117,11 +117,28 @@ Run the fulfilment decomposition for two months with:
 python -m src.analytics.root_cause --kpi fulfilment --from 2025-05 --to 2025-06
 ```
 
-The command prints ranked warehouse, supplier, SKU-group, and region
-contributions, then writes `data/processed/root_cause_latest.json`. Formulas,
+The command prints ranked warehouse, supplier, SKU-group, and (when distinct
+from warehouse) region contributions, then writes
+`data/processed/root_cause_latest.json`. Formulas,
 ranking rules, and dimension assignment assumptions are in
 `docs/root_cause.md`. Only fulfilment is supported at this step; this is not
 the AI recommendation layer.
+
+## Generate an AI explanation
+
+After generating the latest root-cause report, request an evidence-grounded
+explanation with:
+
+```powershell
+python -m src.ai_layer.reasoner --question "Why did fulfilment fall this month?"
+```
+
+Set `LLM_API_KEY` in `.env` to use Anthropic. Without a key, the command
+produces a deterministic response in the same format. `LLM_MODEL` optionally
+selects the model; its default is `claude-sonnet-5-5`. Each attempt and
+validation result is recorded in `ai_audit_log`. The reasoner rejects
+unsupported numbers and retries once. See [docs/ai_reasoner.md](docs/ai_reasoner.md)
+for the evidence and audit details.
 
 ## Roadmap
 
@@ -134,10 +151,11 @@ the AI recommendation layer.
 - [x] Step 6: Add SQL views and KPI, cohort, ranking, and time-based queries.
 - [x] Step 7: Build Python feature engineering, segmentation, and anomaly analysis.
 - [x] Step 8: Add statistical/root-cause analysis and tests for validation and KPI logic.
-- [ ] Step 9: Define KPI formulas, grains, and owners; build CEO Overview, Operations, Inventory, Customer, SLA & Delivery, and Root Cause Power BI dashboards.
-- [ ] Step 10: Produce evidence-grounded AI findings, evidence, and recommendations.
+- [x] Step 9: Produce evidence-grounded AI findings, evidence, and recommendations.
+- [ ] Step 10: Define KPI formulas, grains, and owners; build CEO Overview, Operations, Inventory, Customer, SLA & Delivery, and Root Cause Power BI dashboards.
 - [ ] Step 11: Build n8n validation, execution, alerting, reporting, and audit workflow.
-- [ ] Step 12: Document operations and verify the full reproducible end-to-end flow.
+- [ ] Step 12: Document operations and support procedures.
+- [ ] Step 13: Verify the full reproducible end-to-end flow.
 
 ## Initial Git Commit
 
