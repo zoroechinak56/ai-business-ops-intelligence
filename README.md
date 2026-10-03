@@ -81,6 +81,21 @@ January-June 2025 date dimension, and verifies loaded counts against
 `cleaning_summary.json`. The schema and calendar definitions are in
 `sql/schema/`.
 
+## Run SQL analytics
+
+After rebuilding the database, execute every numbered KPI query and recreate
+the Power BI reporting views with:
+
+```powershell
+python -m src.analytics.run_sql
+```
+
+Queries are stored in `sql/kpi_queries/`, views in `sql/views/`, and metric
+formula/grain/owner definitions in `docs/kpi_dictionary.md`. Carrier-level SLA
+analysis and elapsed ticket-resolution time are unavailable in the current
+source schema; the supplier grouping and NULL resolution-time output are
+documented in the KPI dictionary.
+
 ## Roadmap
 
 - [x] Step 1a: Create the workspace and repository structure.
@@ -89,7 +104,7 @@ January-June 2025 date dimension, and verifies loaded counts against
 - [x] Step 3: Define and test source-data validation rules.
 - [x] Step 4: Build source-data cleaning and rejected-row quarantine outputs.
 - [x] Step 5: Create the SQL schema and deterministic database rebuild command.
-- [ ] Step 6: Add SQL views and KPI, cohort, ranking, and time-based queries.
+- [x] Step 6: Add SQL views and KPI, cohort, ranking, and time-based queries.
 - [ ] Step 7: Build Python feature engineering, segmentation, and anomaly analysis.
 - [ ] Step 8: Add statistical/root-cause analysis and tests for validation and KPI logic.
 - [ ] Step 9: Define KPI formulas, grains, and owners; build CEO Overview, Operations, Inventory, Customer, SLA & Delivery, and Root Cause Power BI dashboards.
