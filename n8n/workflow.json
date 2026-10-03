@@ -1,0 +1,394 @@
+{
+  "name": "Business Operations Analytics Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "business-ops-pipeline",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "4c0da912-fc79-49ed-a034-88d616a7a0ad",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "business-ops-pipeline"
+    },
+    {
+      "parameters": {
+        "command": "python -m src.automation.run_pipeline --file \"{{$json.body.filePath}}\""
+      },
+      "id": "c77ff7b9-8094-49d2-a8e7-14fd9aab31fb",
+      "name": "Run Analytics Pipeline",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "ce66d566-3100-4f3a-ac63-0ea5de4769db",
+      "name": "Wait Before One Retry",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        500
+      ],
+      "webhookId": "business-ops-pipeline-retry"
+    },
+    {
+      "parameters": {
+        "command": "python -m src.automation.run_pipeline --file \"{{$node['Webhook Trigger'].json.body.filePath}}\""
+      },
+      "id": "52cb2a3e-b226-45d2-966f-e7616ee9cba0",
+      "name": "Retry Analytics Pipeline Once",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        960,
+        500
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.stdout;\nif (typeof raw !== 'string') throw new Error('Pipeline did not return JSON on stdout.');\nconst result = JSON.parse(raw.trim());\nif (!result || typeof result.status !== 'string' || !Array.isArray(result.alerts)) {\n  throw new Error('Pipeline JSON is missing status or alerts.');\n}\nreturn [{ json: result }];"
+      },
+      "id": "9efed0d7-cc05-42f2-9408-f1e89bbcd194",
+      "name": "Parse Pipeline JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-alerts",
+              "leftValue": "={{ $json.alerts.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1d8f2865-6214-4ae2-a25b-ffbef8e84a66",
+      "name": "Any Alerts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.PIPELINE_ALERT_FROM }}",
+        "toEmail": "={{ $env.PIPELINE_ALERT_TO }}",
+        "subject": "Business operations pipeline alert",
+        "emailFormat": "text",
+        "text": "={{ $json.alerts.map(alert => alert.message).join('\\n') }}",
+        "options": {}
+      },
+      "id": "901c47c3-c175-4a13-89d7-70744c16ba87",
+      "name": "Send Threshold Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1680,
+        180
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "configure-smtp-credentials",
+          "name": "Configure SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO audit_log (run_id, step, status, started_at, ended_at, rows_processed, message) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING run_id, step, status, message;",
+        "options": {
+          "queryReplacement": "={{ [String($execution.id).slice(0, 36), 'n8n_pipeline', $json.status, $now.toISO(), $now.toISO(), 0, JSON.stringify($json)] }}"
+        }
+      },
+      "id": "ef76556b-f631-4812-b85a-7f05bc63692c",
+      "name": "Audit Pipeline Completion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1920,
+        180
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "configure-postgres-credentials",
+          "name": "Business Operations PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO audit_log (run_id, step, status, started_at, ended_at, rows_processed, message) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING run_id, step, status, message;",
+        "options": {
+          "queryReplacement": "={{ [String($execution.id).slice(0, 36), 'n8n_pipeline', $json.status, $now.toISO(), $now.toISO(), 0, JSON.stringify($json)] }}"
+        }
+      },
+      "id": "2cb30cde-cea8-4649-a4db-b70804ecc6c7",
+      "name": "Audit No-Alert Run",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1680,
+        420
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "configure-postgres-credentials",
+          "name": "Business Operations PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.PIPELINE_SUMMARY_FROM }}",
+        "toEmail": "={{ $env.PIPELINE_SUMMARY_TO }}",
+        "subject": "Business operations pipeline summary",
+        "emailFormat": "text",
+        "text": "={{ $json.message }}",
+        "options": {}
+      },
+      "id": "62271254-106e-4e3d-a938-45d6bc7789b0",
+      "name": "Send Final Summary",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2160,
+        300
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "configure-smtp-credentials",
+          "name": "Configure SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO audit_log (run_id, step, status, started_at, ended_at, rows_processed, message) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING run_id, step, status, message;",
+        "options": {
+          "queryReplacement": "={{ [String($execution.id).slice(0, 36), 'n8n_pipeline_retry', 'failed', $now.toISO(), $now.toISO(), 0, JSON.stringify($json)] }}"
+        }
+      },
+      "id": "90b23ac9-4d24-420b-8ea7-f01a2bb316c6",
+      "name": "Audit Retry Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1200,
+        620
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "configure-postgres-credentials",
+          "name": "Business Operations PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.PIPELINE_SUMMARY_FROM }}",
+        "toEmail": "={{ $env.PIPELINE_SUMMARY_TO }}",
+        "subject": "Business operations pipeline failed",
+        "emailFormat": "text",
+        "text": "The pipeline command failed after one retry. Review the n8n execution and audit_log for details.",
+        "options": {}
+      },
+      "id": "cb8692d4-0330-4be4-aa27-38ea339bd35a",
+      "name": "Send Failure Summary",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        620
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "configure-smtp-credentials",
+          "name": "Configure SMTP"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Run Analytics Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Analytics Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Parse Pipeline JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Before One Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before One Retry": {
+      "main": [
+        [
+          {
+            "node": "Retry Analytics Pipeline Once",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry Analytics Pipeline Once": {
+      "main": [
+        [
+          {
+            "node": "Parse Pipeline JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Audit Retry Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Pipeline JSON": {
+      "main": [
+        [
+          {
+            "node": "Any Alerts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Alerts?": {
+      "main": [
+        [
+          {
+            "node": "Send Threshold Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Audit No-Alert Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Threshold Alert": {
+      "main": [
+        [
+          {
+            "node": "Audit Pipeline Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Pipeline Completion": {
+      "main": [
+        [
+          {
+            "node": "Send Final Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit No-Alert Run": {
+      "main": [
+        [
+          {
+            "node": "Send Final Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Retry Failure": {
+      "main": [
+        [
+          {
+            "node": "Send Failure Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "923a2d1d-1b4f-4798-8587-bf6d00461183",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
