@@ -69,15 +69,16 @@ python tasks.py clean
 - [x] Step 1b: Add dependency, configuration, logging, task, test, and documentation foundations.
 - [x] Step 2: Generate reproducible synthetic source data with intentional operational issues.
 - [x] Step 3: Define and test source-data validation rules.
-- [ ] Step 4: Create the SQL database schema and deterministic database rebuild command.
-- [ ] Step 5: Implement ingestion, cleaning, and standardized database loading.
-- [ ] Step 6: Add SQL views and KPI, cohort, ranking, and time-based queries.
-- [ ] Step 7: Build Python feature engineering, segmentation, and anomaly analysis.
-- [ ] Step 8: Add statistical/root-cause analysis and tests for validation and KPI logic.
-- [ ] Step 9: Define KPI formulas, grains, and owners; build CEO Overview, Operations, Inventory, Customer, SLA & Delivery, and Root Cause Power BI dashboards.
-- [ ] Step 10: Produce evidence-grounded AI findings, evidence, and recommendations.
-- [ ] Step 11: Build n8n validation, execution, alerting, reporting, and audit workflow.
-- [ ] Step 12: Document operations and verify the full reproducible end-to-end flow.
+- [x] Step 4: Build source-data cleaning and rejected-row quarantine outputs.
+- [ ] Step 5: Create the SQL database schema and deterministic database rebuild command.
+- [ ] Step 6: Implement ingestion and standardized database loading.
+- [ ] Step 7: Add SQL views and KPI, cohort, ranking, and time-based queries.
+- [ ] Step 8: Build Python feature engineering, segmentation, and anomaly analysis.
+- [ ] Step 9: Add statistical/root-cause analysis and tests for validation and KPI logic.
+- [ ] Step 10: Define KPI formulas, grains, and owners; build CEO Overview, Operations, Inventory, Customer, SLA & Delivery, and Root Cause Power BI dashboards.
+- [ ] Step 11: Produce evidence-grounded AI findings, evidence, and recommendations.
+- [ ] Step 12: Build n8n validation, execution, alerting, reporting, and audit workflow.
+- [ ] Step 13: Document operations and verify the full reproducible end-to-end flow.
 
 ## Initial Git Commit
 
