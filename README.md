@@ -185,33 +185,45 @@ For n8n setup, execution requirements, alert thresholds, and credentials, see
 
 ## Power BI dashboard concepts
 
-The project includes Power BI-ready CSV exports and a specification for six
-dashboard pages. The image references below are placeholders for screenshots
-to add when the reports have been assembled in Power BI Desktop.
+The project includes six built Power BI dashboard pages and the supporting
+Power BI-ready CSV exports. The screenshots below show the completed
+Dashboards from Power BI Desktop.
 
 ### CEO Overview
 
-![CEO Overview dashboard screenshot placeholder](docs/screenshots/powerbi-ceo-overview.png)
+![CEO Overview dashboard](docs/screenshots/01_ceo_overview.png)
+
+Fulfilment falls from 93.99% to 88.06% in June.
 
 ### Operations
 
-![Operations dashboard screenshot placeholder](docs/screenshots/powerbi-operations.png)
+![Operations dashboard](docs/screenshots/02_operations.png)
+
+Warehouse A is the largest contributor at -9.57pp.
 
 ### Inventory
 
-![Inventory dashboard screenshot placeholder](docs/screenshots/powerbi-inventory.png)
+![Inventory dashboard](docs/screenshots/04_inventory.png)
+
+SKU group Y's stock-out rate is 32.6%.
 
 ### Customer
 
-![Customer dashboard screenshot placeholder](docs/screenshots/powerbi-customer.png)
+![Customer dashboard](docs/screenshots/05_customer.png)
+
+Customer service and order-quality KPIs are tracked across segments and channels.
 
 ### SLA & Delivery
 
-![SLA & Delivery dashboard screenshot placeholder](docs/screenshots/powerbi-sla-delivery.png)
+![SLA & Delivery dashboard](docs/screenshots/06_sla_delivery.png)
+
+On-time delivery performance is tracked against SLA and service commitments.
 
 ### Root Cause
 
-![Root Cause dashboard screenshot placeholder](docs/screenshots/powerbi-root-cause.png)
+![Root Cause dashboard](docs/screenshots/03_root_cause.png)
+
+Supplier X's late rate is 34.5% versus a 20.0% average.
 
 ### n8n workflow
 
